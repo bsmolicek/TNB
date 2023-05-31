@@ -5,11 +5,13 @@ import software.tnb.common.utils.WaitUtils;
 import software.tnb.product.endpoint.Endpoint;
 import software.tnb.product.log.Log;
 import software.tnb.product.log.stream.LogStream;
+import software.tnb.product.mapstruct.MapstructConfiguration;
 import software.tnb.product.util.maven.Maven;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +86,40 @@ public abstract class App {
 
     private boolean isCamelStarted() {
         return getLog().containsRegex(LOG_STARTED_REGEX);
+    }
+
+    public void updatePlugin(String pluginName, Plugin plugin) {
+        Xpp3Dom configuration = new Xpp3Dom("configuration");
+
+        Xpp3Dom annotationProcessorPaths = new Xpp3Dom("annotationProcessorPaths");
+
+        Xpp3Dom path = new Xpp3Dom("path");
+
+        Xpp3Dom groupId = new Xpp3Dom("groupId");
+        groupId.setValue("org.mapstruct");
+
+        Xpp3Dom artifactId = new Xpp3Dom("artifactId");
+        artifactId.setValue("mapstruct-processor");
+
+        Xpp3Dom version = new Xpp3Dom("version");
+        version.setValue(MapstructConfiguration.mapstructMapperVersion());
+
+        path.addChild(groupId);
+        path.addChild(artifactId);
+        path.addChild(version);
+        annotationProcessorPaths.addChild(path);
+        configuration.addChild(annotationProcessorPaths);
+
+        File pom = TestConfiguration.appLocation().resolve(name).resolve("pom.xml").toFile();
+        Model model = Maven.loadPom(pom);
+
+        for (Plugin p : model.getBuild().getPlugins()) {
+            if ("maven-compiler-plugin".equals(p.getArtifactId())) {
+                p.setConfiguration(configuration);
+                break;
+            }
+        }
+        Maven.writePom(pom, model);
     }
 
     protected void customizePlugins(List<Plugin> mavenPlugins) {

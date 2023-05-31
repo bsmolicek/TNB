@@ -81,6 +81,8 @@ public abstract class SpringBootApp extends App {
 
             customizePlugins(integrationBuilder.getPlugins());
 
+//            updatePlugin("maven-compiler-plugin", null);
+
             BuildRequest.Builder requestBuilder = new BuildRequest.Builder()
                 .withBaseDirectory(TestConfiguration.appLocation().resolve(name))
                 .withGoals("clean", "package")

@@ -4,6 +4,7 @@ import software.tnb.common.config.TestConfiguration;
 import software.tnb.common.utils.MapUtils;
 import software.tnb.product.customizer.Customizer;
 import software.tnb.product.integration.Resource;
+import software.tnb.product.mapstruct.MapstructConfiguration;
 import software.tnb.product.util.maven.Maven;
 
 import org.apache.camel.builder.RouteBuilder;
@@ -11,6 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Plugin;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +182,37 @@ public abstract class AbstractIntegrationBuilder<SELF extends AbstractIntegratio
 
     public SELF addToProperties(Properties properties) {
         properties.forEach((key, value) -> this.properties.setProperty(key.toString(), value.toString()));
+        return self();
+    }
+
+    public SELF updatePlugin(Plugin plugin) {
+        Xpp3Dom configuration = new Xpp3Dom("configuration");
+
+        Xpp3Dom annotationProcessorPaths = new Xpp3Dom("annotationProcessorPaths");
+
+        Xpp3Dom path = new Xpp3Dom("path");
+
+        Xpp3Dom groupId = new Xpp3Dom("groupId");
+        groupId.setValue("org.mapstruct");
+
+        Xpp3Dom artifactId = new Xpp3Dom("artifactId");
+        artifactId.setValue("mapstruct-processor");
+
+        Xpp3Dom version = new Xpp3Dom("version");
+        version.setValue(MapstructConfiguration.mapstructMapperVersion());
+
+        path.addChild(groupId);
+        path.addChild(artifactId);
+        path.addChild(version);
+        annotationProcessorPaths.addChild(path);
+        configuration.addChild(annotationProcessorPaths);
+
+        for (Plugin p : plugins) {
+            if ("maven-compiler-plugin".equals(p.getArtifactId())) {
+                p.setConfiguration(configuration);
+                break;
+            }
+        }
         return self();
     }
 
