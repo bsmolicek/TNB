@@ -33,14 +33,16 @@ public final class SpringBootIntegrationBuilder extends AbstractMavenGitIntegrat
     }
 
     public SpringBootIntegrationBuilder fromSpringBootXmlCamelContext(String camelContextPath) {
+        // Classpath resources always use forward slashes, regardless of OS
+        String normalizedPath = camelContextPath.replace("\\", "/");
         String resourceData;
-        try (InputStream is = this.getClass().getClassLoader().getResourceAsStream(camelContextPath)) {
+        try (InputStream is = this.getClass().getClassLoader().getResourceAsStream(normalizedPath)) {
             resourceData = IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Unable to read resource: ", e);
         }
 
-        xmlCamelContext.add(new Resource(camelContextPath.substring(camelContextPath.lastIndexOf(File.separator) + 1), resourceData));
+        xmlCamelContext.add(new Resource(normalizedPath.substring(normalizedPath.lastIndexOf("/") + 1), resourceData));
         return self();
     }
 
